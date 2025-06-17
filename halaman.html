@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resep Sambal (Realtime)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      padding-top: 56px;
+      background: linear-gradient(to bottom, #fff2e6, #ffe0b3);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .card {
+      border: none;
+      border-radius: 16px;
+      background-color: #fff0e0;
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(255, 94, 0, 0.25);
+    }
+
+    .card-img-top {
+      height: 220px;
+      object-fit: cover;
+      border-radius: 16px 16px 0 0;
+      border-bottom: 4px solid #ff6600;
+    }
+
+    .navbar {
+      background-color: #fff0e6;
+      box-shadow: 0 2px 6px rgba(255, 102, 0, 0.2);
+    }
+
+    .navbar-brand,
+    .nav-link {
+      color: #cc3300 !important;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background-color: #ff6600;
+      border-color: #ff6600;
+    }
+
+    .btn-primary:hover {
+      background-color: #e65c00;
+      border-color: #e65c00;
+    }
+
+    .btn-outline-primary {
+      color: #ff6600;
+      border-color: #ff6600;
+    }
+
+    .btn-outline-primary:hover {
+      background-color: #ff6600;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg fixed-top">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3" id="navUser"></div>
+    <form class="d-flex ms-auto" role="search">
+      <input class="form-control me-2" type="search" id="cariInput" placeholder="Cari sambal...">
+      <button class="btn btn-outline-success" type="submit">Cari</button>
+    </form>
+  </div>
+</nav>
+
+<!-- Daftar Sambal -->
+<div class="container mt-5">
+  <h2 class="text-center">Daftar Sambal</h2>
+  <div class="row row-cols-1 row-cols-md-3 g-4" id="listSambal"></div>
+  <div class="text-center mt-4">
+    <a href="tambahsambal.html" class="btn btn-primary">Tambah Sambal</a>
+  </div>
+</div>
+
+<footer class="bg-light text-center py-3 mt-5">
+  <p class="mb-0">&copy; 2025 Website Resep Sambal</p>
+</footer>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAojJsQfmYUCpvE_DRWqvF_WqMRMsdd2Hc",
+    authDomain: "tugas-akhir-36bb9.firebaseapp.com",
+    databaseURL: "https://tugas-akhir-36bb9-default-rtdb.firebaseio.com/",
+    projectId: "tugas-akhir-36bb9",
+    storageBucket: "tugas-akhir-36bb9.appspot.com",
+    messagingSenderId: "508375050981",
+    appId: "1:508375050981:web:1d7e4a24caca4c6acdc20c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let user = JSON.parse(localStorage.getItem("userProfile"));
+  const navUser = document.getElementById("navUser");
+  const listSambal = document.getElementById("listSambal");
+  const cariInput = document.getElementById("cariInput");
+
+  // Jika tidak ada user, clear localStorage dan tampilkan tombol login
+  if (!user || !user.uid) {
+    localStorage.removeItem("userProfile");
+    user = null;
+    renderUserNavbar();
+  } else {
+    // Ambil data user terbaru dari Firebase realtime dan update localStorage & navbar
+    const userRef = ref(db, `users/${user.uid}`);
+    onValue(userRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Merge data user lama dan data terbaru dari Firebase
+        user = { ...user, ...data };
+        localStorage.setItem("userProfile", JSON.stringify(user));
+        renderUserNavbar();
+      }
+    });
+  }
+
+  function renderUserNavbar() {
+    if (user) {
+      const foto = user.photo && user.photo.startsWith("data")
+        ? user.photo
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "User")}&background=ffcc99&color=663300&size=32`;
+
+      navUser.innerHTML = `
+        <a href="halaman profil.html" class="profile-nav text-decoration-none text-dark d-flex align-items-center gap-2">
+          <img src="${foto}" style="width:32px;height:32px;border-radius:50%;border:2px solid #ff4d4d;" alt="Foto Profil"> 
+          <span>${user.name}</span>
+        </a>
+        <button class="btn btn-sm btn-outline-danger ms-2" onclick="logout()">Logout</button>
+      `;
+    } else {
+      navUser.innerHTML = `
+        <a href="halaman login.html" class="btn btn-outline-primary">Login</a>
+      `;
+    }
+  }
+
+  window.logout = function() {
+    if (confirm("Yakin ingin logout?")) {
+      localStorage.removeItem("userProfile");
+      location.reload();
+    }
+  }
+
+  function renderSambalList(data) {
+    listSambal.innerHTML = "";
+    if (data.length === 0) {
+      listSambal.innerHTML = `<p class='text-center text-muted'>Sambal tidak ditemukan.</p>`;
+      return;
+    }
+    data.forEach(item => {
+      const col = document.createElement("div");
+      col.className = "col";
+      col.innerHTML = `
+        <div class="card h-100">
+          <img src="${item.media || 'https://via.placeholder.com/300x200?text=Sambal'}" class="card-img-top" alt="${item.nama}">
+          <div class="card-body">
+            <h5 class="card-title">${item.nama}</h5>
+            <p class="card-text">${(item.langkah || "Tidak ada langkah").substring(0, 80)}...</p>
+            <a href="lihatdetail.html?id=${item.id}" class="btn btn-sm btn-primary">Lihat Detail</a>
+          </div>
+        </div>
+      `;
+      listSambal.appendChild(col);
+    });
+  }
+
+  // Ambil data sambal dan render realtime
+  onValue(ref(db, "sambal"), (snapshot) => {
+    const allData = [];
+    snapshot.forEach(child => {
+      const val = child.val();
+      val.id = child.key;
+      allData.push(val);
+    });
+
+    // Urutkan berdasarkan timestamp jika tersedia
+    allData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    renderSambalList(allData);
+
+    // Filter berdasarkan input pencarian
+    document.querySelector("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const keyword = cariInput.value.trim().toLowerCase();
+      if (!keyword) {
+        renderSambalList(allData);
+        return;
+      }
+      const filtered = allData.filter(item => item.nama.toLowerCase().includes(keyword));
+      renderSambalList(filtered);
+    });
+  });
+
+  // Render user navbar awal (sementara menunggu onValue update data)
+  renderUserNavbar();
+</script>
+
+</body>
+</html>

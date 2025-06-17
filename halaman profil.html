@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profil Pengguna - Resep Sambal</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(to bottom, #fff1e6, #ffd6b3);
+      font-family: 'Segoe UI', sans-serif;
+      padding-top: 60px;
+    }
+    .profile-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 40px;
+      background-color: #fff0e6;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(255, 102, 0, 0.15);
+      position: relative;
+    }
+    .back-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #cc3300;
+      font-weight: 600;
+    }
+    .profile-pic {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #ff3300;
+      display: block;
+      margin: 0 auto 15px;
+      box-shadow: 0 0 10px rgba(255, 51, 0, 0.3);
+    }
+    .profile-name {
+      font-weight: 700;
+      font-size: 28px;
+      text-align: center;
+      color: #cc2200;
+    }
+    .bio {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #802b00;
+      font-style: italic;
+    }
+    .resep-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .resep-item img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(255, 85, 0, 0.2);
+      border: 2px solid #ff9966;
+    }
+    .edit-form {
+      display: none;
+      margin-top: 20px;
+      background-color: #fffaf3;
+      padding: 15px;
+      border: 1px solid #ffd9b3;
+      border-radius: 8px;
+    }
+    @media (max-width: 768px) {
+      .profile-container {
+        padding: 20px;
+      }
+      .profile-pic {
+        width: 100px;
+        height: 100px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="profile-container">
+    <a href="halaman.html" class="btn btn-outline-secondary back-btn">&larr; Kembali</a>
+
+    <img src="" alt="Foto Profil" class="profile-pic" id="profilePic" />
+    <div class="profile-name" id="profileName">Nama</div>
+    <div class="bio" id="bio">Bio belum diisi.</div>
+
+    <div class="text-center mb-3">
+      <a href="tambahsambal.html" class="btn btn-outline-primary">+ Tambah Resep</a>
+      <button class="btn btn-outline-danger" id="editBtn">Edit Profil</button>
+      <button class="btn btn-secondary" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="edit-form" id="editForm">
+      <form onsubmit="updateProfile(event)">
+        <div class="mb-3">
+          <label class="form-label">Nama</label>
+          <input type="text" class="form-control" id="editName">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Bio</label>
+          <textarea class="form-control" id="editBio" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Foto Profil</label>
+          <input type="file" class="form-control" id="editPhoto" accept="image/*">
+        </div>
+        <div class="d-grid">
+          <button type="submit" class="btn btn-success">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+
+    <h5 class="mt-4">Resep Saya</h5>
+    <div class="resep-grid" id="resepGridSaya"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAojJsQfmYUCpvE_DRWqvF_WqMRMsdd2Hc",
+    authDomain: "tugas-akhir-36bb9.firebaseapp.com",
+    databaseURL: "https://tugas-akhir-36bb9-default-rtdb.firebaseio.com/",
+    projectId: "tugas-akhir-36bb9",
+    storageBucket: "tugas-akhir-36bb9.appspot.com",
+    messagingSenderId: "508375050981",
+    appId: "1:508375050981:web:1d7e4a24caca4c6acdc20c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let user = JSON.parse(localStorage.getItem("userProfile"));
+  if (!user || !user.uid) {
+    alert("Silakan login terlebih dahulu!");
+    window.location.href = "halaman login.html";
+  }
+
+  // Update tampilan profil dari database realtime
+  const userRef = ref(db, `users/${user.uid}`);
+  onValue(userRef, snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      user = { ...user, ...data };
+      localStorage.setItem("userProfile", JSON.stringify(user));
+      document.getElementById("profileName").textContent = user.name || "Nama Pengguna";
+      document.getElementById("bio").textContent = user.bio || "Bio belum diisi.";
+      document.getElementById("profilePic").src =
+        user.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=ffcc99&color=663300&size=140`;
+    }
+  });
+
+  document.getElementById("editBtn").addEventListener("click", () => {
+    const form = document.getElementById("editForm");
+    const isHidden = getComputedStyle(form).display === "none";
+    form.style.display = isHidden ? "block" : "none";
+    if (isHidden) {
+      document.getElementById("editName").value = user.name || "";
+      document.getElementById("editBio").value = user.bio || "";
+    }
+  });
+
+  window.updateProfile = function (e) {
+    e.preventDefault();
+    const newName = document.getElementById("editName").value.trim();
+    const newBio = document.getElementById("editBio").value.trim();
+    const photoInput = document.getElementById("editPhoto");
+
+    const updateFinal = (photoData) => {
+      const updated = {
+        name: newName,
+        bio: newBio,
+        photo: photoData || user.photo || ""
+      };
+      set(userRef, { ...user, ...updated }).then(() => {
+        alert("Profil berhasil diperbarui!");
+        document.getElementById("editForm").style.display = "none";
+      });
+    };
+
+    if (photoInput.files.length > 0) {
+      const reader = new FileReader();
+      reader.onload = e => updateFinal(e.target.result);
+      reader.readAsDataURL(photoInput.files[0]);
+    } else {
+      updateFinal();
+    }
+  };
+
+  // Tampilkan resep saya
+  const gridSaya = document.getElementById("resepGridSaya");
+  onValue(ref(db, "sambal"), snapshot => {
+    gridSaya.innerHTML = "";
+    const semua = [];
+    snapshot.forEach(child => {
+      const val = child.val();
+      if (val.dibuatOleh === user.name) {
+        val.id = child.key;
+        semua.push(val);
+      }
+    });
+    if (semua.length === 0) {
+      gridSaya.innerHTML = "<p class='text-muted'>Belum ada resep Anda.</p>";
+    } else {
+      semua.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "resep-item";
+        div.innerHTML = `
+          <img src="${item.media}" alt="${item.nama}">
+          <div class="mt-1"><strong>${item.nama}</strong></div>
+          <a href="lihatdetail.html?id=${item.id}" class="btn btn-sm btn-primary mt-1">Lihat</a>
+          <button class="btn btn-sm btn-danger mt-1 ms-2" onclick="hapusResepSaya('${item.id}')">Hapus</button>
+        `;
+        gridSaya.appendChild(div);
+      });
+    }
+  });
+
+  window.hapusResepSaya = function(id) {
+    if (confirm('Yakin ingin menghapus resep ini?')) {
+      remove(ref(db, `sambal/${id}`)).then(() => alert('Resep berhasil dihapus.'));
+    }
+  };
+
+  window.logout = function() {
+    localStorage.removeItem("userProfile");
+    window.location.href = "halaman login.html";
+  };
+</script>
+</body>
+</html>

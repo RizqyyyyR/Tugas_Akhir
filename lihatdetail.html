@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detail Resep Sambal</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+  body {
+    background: linear-gradient(to bottom, #fff3e0, #ffe0b2);
+    font-family: 'Segoe UI', sans-serif;
+    color: #5d2a00;
+  }
+
+  h2, h5 {
+    color: #d84315;
+    font-weight: bold;
+  }
+
+  .profile-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #ff6600;
+    box-shadow: 0 0 6px rgba(255, 102, 0, 0.4);
+    transition: transform 0.3s ease;
+  }
+  .profile-thumb:hover {
+    transform: scale(1.1);
+  }
+
+  .img-thumbnail-custom {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 3px solid #ff7043;
+    box-shadow: 0 6px 18px rgba(255, 87, 34, 0.3);
+    transition: transform 0.3s ease;
+  }
+  .img-thumbnail-custom:hover {
+    transform: scale(1.01);
+  }
+
+  .hapus-btn {
+    font-size: 0.8rem;
+    color: #e53935;
+    background: none;
+    border: none;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .hapus-btn:hover {
+    color: #b71c1c;
+    text-decoration: underline;
+  }
+
+  .komentar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #fff7f0;
+    box-shadow: 0 2px 6px rgba(255, 102, 0, 0.15);
+    transition: transform 0.2s ease;
+  }
+  .komentar-item:hover {
+    transform: translateY(-2px);
+  }
+
+  .komentar-foto {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ffa366;
+    box-shadow: 0 0 4px rgba(255, 165, 0, 0.25);
+    transition: transform 0.3s ease;
+  }
+  .komentar-foto:hover {
+    transform: scale(1.1);
+  }
+
+  .btn-outline-primary {
+    border-color: #ff7043;
+    color: #ff7043;
+    font-weight: bold;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+  .btn-outline-primary:hover {
+    background-color: #ff7043;
+    color: #fff;
+  }
+
+  .btn-success {
+    background-color: #ffa726;
+    border-color: #ffa726;
+    font-weight: bold;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+  .btn-success:hover {
+    background-color: #fb8c00;
+    border-color: #fb8c00;
+  }
+
+  #inputKomentar {
+    border-radius: 10px;
+    border: 2px solid #ffcc80;
+    background-color: #fffaf0;
+  }
+
+  footer {
+    background: linear-gradient(to right, #ff7043, #bf360c);
+    color: white;
+  }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm fixed-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="halaman.html">&larr; Kembali</a>
+  </div>
+</nav>
+
+<div class="container mt-5 pt-5">
+  <h2 class="fw-bold" id="judulResep">Judul Resep</h2>
+  <img src="" id="gambarResep" class="img-thumbnail-custom my-3"/>
+  <p id="tanggalResep" class="text-muted"></p>
+  <div class="d-flex align-items-center mb-3">
+    <img id="fotoPengguna" src="" class="profile-thumb me-2" alt="Profil">
+    <strong id="namaPengguna">Anonim</strong>
+  </div>
+
+  <h5>Bahan-bahan:</h5>
+  <ul id="daftarBahan"></ul>
+
+  <h5>Langkah-langkah:</h5>
+  <p id="langkahSingkat"></p>
+
+  <!-- Tombol Simpan Resep DIHAPUS -->
+
+  <div class="mt-5">
+    <h5>Komentar</h5>
+    <ul id="daftarKomentar" class="list-group mb-3"></ul>
+    <div class="input-group">
+      <input type="text" id="inputKomentar" class="form-control" placeholder="Tulis komentar...">
+      <button class="btn btn-success" onclick="tambahKomentar()">Kirim</button>
+    </div>
+  </div>
+</div>
+
+<footer class="bg-dark text-white text-center py-3 mt-5">
+  <p class="mb-0">&copy; 2025 Resepku. All rights reserved.</p>
+</footer>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getDatabase, ref, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAojJsQfmYUCpvE_DRWqvF_WqMRMsdd2Hc",
+    authDomain: "tugas-akhir-36bb9.firebaseapp.com",
+    databaseURL: "https://tugas-akhir-36bb9-default-rtdb.firebaseio.com/",
+    projectId: "tugas-akhir-36bb9",
+    storageBucket: "tugas-akhir-36bb9.appspot.com",
+    messagingSenderId: "508375050981",
+    appId: "1:508375050981:web:1d7e4a24caca4c6acdc20c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const user = JSON.parse(localStorage.getItem("userProfile"));
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  const resepRef = ref(db, `sambal/${id}`);
+  const komentarRef = ref(db, `komentar/${id}`);
+
+  onValue(resepRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return alert("Resep tidak ditemukan");
+
+    document.getElementById("judulResep").textContent = data.nama;
+    document.getElementById("gambarResep").src = data.media || "https://via.placeholder.com/600x300";
+    document.getElementById("tanggalResep").textContent = "Dibuat pada: " + (data.tanggal || "-");
+    const nama = data.dibuatOleh || "Anonim";
+    const foto = data.fotoPembuat && data.fotoPembuat.startsWith("data")
+      ? data.fotoPembuat
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(nama)}&background=ffcc99&color=663300&size=40`;
+    document.getElementById("fotoPengguna").src = foto;
+    document.getElementById("namaPengguna").textContent = data.dibuatOleh || "Anonim";
+
+    document.getElementById("daftarBahan").innerHTML = data.bahan.map(b => `<li>${b}</li>`).join("");
+    document.getElementById("langkahSingkat").textContent = data.langkah;
+  });
+
+  window.tambahKomentar = function() {
+    if (!user) {
+      alert("Silakan login terlebih dahulu untuk memberi komentar.");
+      return;
+    }
+
+    const teks = document.getElementById("inputKomentar").value.trim();
+    if (!teks) return;
+
+    push(komentarRef, {
+      nama: user.name,
+      foto: user.photo && user.photo.startsWith("data")
+        ? user.photo
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=ffcc99&color=663300&size=40`,
+      teks,
+      waktu: Date.now()
+    });
+    document.getElementById("inputKomentar").value = "";
+  };
+
+  onValue(komentarRef, (snapshot) => {
+    const ul = document.getElementById("daftarKomentar");
+    ul.innerHTML = "";
+    snapshot.forEach((child) => {
+      const data = child.val();
+      const li = document.createElement("li");
+      li.className = "list-group-item d-flex justify-content-between align-items-center";
+      li.innerHTML = `
+        <div class="komentar-item">
+          <img src="${data.foto}" class="komentar-foto">
+          <strong>${data.nama}</strong>: ${data.teks}
+        </div>
+        ${data.nama === user?.name ? `<button class="hapus-btn" onclick="hapusKomentar('${child.key}')">Hapus</button>` : ""}
+      `;
+      ul.appendChild(li);
+    });
+  });
+
+  window.hapusKomentar = function(kunci) {
+    if (confirm("Hapus komentar ini?")) {
+      remove(ref(db, `komentar/${id}/${kunci}`));
+    }
+  };
+</script>
+
+</body>
+</html>
